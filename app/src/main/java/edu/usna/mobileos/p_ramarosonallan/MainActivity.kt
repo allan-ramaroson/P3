@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var filePath: String
     private val LO_RES_REQUEST_CODE = 123
     private val HI_RES_REQUEST_CODE = 456
+    val dog : String = "ruff"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
