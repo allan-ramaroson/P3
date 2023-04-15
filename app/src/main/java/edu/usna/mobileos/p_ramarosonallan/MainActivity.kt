@@ -2,11 +2,13 @@ package edu.usna.mobileos.p_ramarosonallan
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -19,13 +21,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
+
+    // global variables
     lateinit var description : TextView
     lateinit var mainImg : ImageView
-    lateinit var camBtn : Button
+    lateinit var cameraBtn : Button
     lateinit var filePath: String
-    private val LO_RES_REQUEST_CODE = 123
     private val HI_RES_REQUEST_CODE = 456
-    val dog : String = "ruffagain243"
+    private val TAG : String = "IT472"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,10 +37,30 @@ class MainActivity : AppCompatActivity() {
 
         description = findViewById(R.id.description)
         mainImg = findViewById(R.id.mainImg)
-        camBtn = findViewById(R.id.cameraBtn)
+        cameraBtn = findViewById(R.id.cameraBtn)
+
+        mainImg.setImageResource(R.drawable.empty)
     }
 
-    fun launchCamera(v : View?){
+    // create options menu
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.options_menu, menu)
+        return true
+    }
+
+    // handles click events for adding an item
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId){
+            R.id.previous -> {
+                val addIntent = Intent(this, AddItem::class.java)
+                startActivityForResult(addIntent, requestCodeAdd)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    fun onClick(v: View?){
         // intent to launch default camera app
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
@@ -51,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         //get URI - this uses a FileProvider
         val fileURI: Uri = FileProvider.getUriForFile(
             this,
-            "edu.usna.mobileos.cameraexamples.fileprovider",
+            "edu.usna.mobileos.p_ramarosonallan.fileprovider",
             cameraFile
         )
 
@@ -63,8 +86,26 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, HI_RES_REQUEST_CODE)
     }
 
+    // creates a filename based off of current time and day
     private fun createFileName(): String {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         return "IMG_$timeStamp.jpg"
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == HI_RES_REQUEST_CODE) {
+            when(resultCode){
+                RESULT_OK ->{
+                    // get the high-quality image created if intent extra used
+                    val photo = BitmapFactory.decodeFile(filePath)
+                    mainImg.setImageBitmap(photo)
+                    description.text = filePath
+                }
+                RESULT_CANCELED -> Log.i(TAG, "cancelled")
+                else -> Log.i(TAG, "failed")
+            }
+        }
     }
 }
