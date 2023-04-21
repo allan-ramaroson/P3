@@ -3,4 +3,7 @@
     <string name="past">View Past Pictures</string>
     <string name="retake">Retake Picture</string>
     <string name="previous">Previous Pictures</string>
+    <string name="show">Show</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
 </resources>

@@ -7,11 +7,22 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/description"
+        android:id="@+id/filename"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:text="No Photo Taken Yet for today"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/description"
+        app:layout_constraintVertical_weight="0.1"/>
+
+    <EditText
+        android:id="@+id/description"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:text="Add a description before saving"
+        app:layout_constraintTop_toBottomOf="@id/filename"
         app:layout_constraintLeft_toRightOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="@id/mainImg"
@@ -24,20 +35,32 @@
         app:layout_constraintTop_toBottomOf="@id/description"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/saveBtn"
+        app:layout_constraintVertical_weight="0.6"/>
+
+    <Button
+        android:id="@+id/saveBtn"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="SAVE"
+        android:onClick="onClickSave"
+        app:layout_constraintTop_toBottomOf="@id/mainImg"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="@id/cameraBtn"
-        app:layout_constraintVertical_weight="0.7"/>
+        app:layout_constraintVertical_weight="0.1"/>
 
     <Button
         android:id="@+id/cameraBtn"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="CAMERA"
-        android:onClick="onClick"
-        app:layout_constraintTop_toBottomOf="@id/mainImg"
+        android:onClick="onClickCamera"
+        app:layout_constraintTop_toBottomOf="@id/saveBtn"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_weight="0.2"/>
+        app:layout_constraintVertical_weight="0.1"/>
 
 
 
