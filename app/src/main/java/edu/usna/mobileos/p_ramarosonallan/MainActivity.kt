@@ -16,36 +16,44 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.FileProvider
+import com.google.android.material.snackbar.Snackbar
 import java.io.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
     // global variables
+    private val c: Calendar = Calendar.getInstance()
+    private var date : String = "${c.get(Calendar.MONTH)}/${c.get(Calendar.DATE)}/${c.get(Calendar.YEAR)}"
+    var newDate : String
     lateinit var description : EditText
     lateinit var filetext : TextView
     lateinit var mainImg : ImageView
     lateinit var cameraBtn : Button
     lateinit var filePath: String
-    lateinit var currImgDate : String
+    lateinit var currImage : ImageFile
+    lateinit var currImgFName : String
+    lateinit var currImgPath : String
     private val HI_RES_REQUEST_CODE = 456
     private val TAG : String = "IT472"
-    private var imageFiles = arrayListOf<ImageFile>()
-    private val appFile = "imgFiles"
     private val previousCode = 2001
+    private val appFile = "imgFiles"
+    private lateinit var imgList : ArrayList<ImageFile>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        imgList = retrieveTasks()
+
         description = findViewById(R.id.description)
         mainImg = findViewById(R.id.mainImg)
         cameraBtn = findViewById(R.id.cameraBtn)
         filetext = findViewById(R.id.filename)
-        imageFiles = retrieveTasks()
 
         mainImg.setImageResource(R.drawable.empty)
     }
@@ -61,7 +69,6 @@ class MainActivity : AppCompatActivity() {
         return when(item.itemId){
             R.id.previous -> {
                 val previousIntent = Intent(this, FileManager::class.java)
-                previousIntent.putExtra("files", imageFiles)
                 startActivityForResult(previousIntent, previousCode)
                 true
             }
@@ -70,50 +77,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onClickCamera(v: View?){
-        // intent to launch default camera app
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-
-        // calls custom method that creates a file name based on the current Date
-        val fileName = createFileName()
-        currImgDate = createFileName()
-
-        //  store picture to app specific folder.  Files will be deleted if app is deleted
-        filePath = getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString() + "/" + fileName
-        val cameraFile = File(filePath)
-
-        //get URI - this uses a FileProvider
-        val fileURI: Uri = FileProvider.getUriForFile(
-            this,
-            "edu.usna.mobileos.p_ramarosonallan.fileprovider",
-            cameraFile
-        )
-
-        //set the URI as an extra for this intent
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileURI)
-
-        // start the image capture Intent
-        startActivityForResult(intent, HI_RES_REQUEST_CODE)
-    }
-
-    fun onClickSave(v: View?){
-        val currImgFile = ImageFile(currImgDate, filePath, description.text.toString())
-        val i = index(currImgFile)
-        if(i != -1){
-            imageFiles[i] = currImgFile
-
+        if(newC != c){
+            Snackbar.make(findViewById(android.R.id.content),
+                "Can't retake picture. TOO OLD!",
+                Snackbar.LENGTH_LONG)
+                .show()
         }
         else{
-            imageFiles.add(currImgFile)
-        }
-    }
+            // intent to launch default camera app
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
-    fun index(ifile : ImageFile) : Int{
-        for(i in imageFiles.indices){
-            if(ifile.fname == imageFiles[i].fname){
-                return i
-            }
+            // calls custom method that creates a file name based on the current Date
+            val fileName = createFileName()
+            currImgFName = fileName
+
+            //  store picture to app specific folder.  Files will be deleted if app is deleted
+            filePath = getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString() + "/" + fileName
+            val cameraFile = File(filePath)
+            currImgPath = filePath
+
+            //get URI - this uses a FileProvider
+            val fileURI: Uri = FileProvider.getUriForFile(
+                this,
+                "edu.usna.mobileos.p_ramarosonallan.fileprovider",
+                cameraFile
+            )
+
+            //set the URI as an extra for this intent
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, fileURI)
+
+            // start the image capture Intent
+            startActivityForResult(intent, HI_RES_REQUEST_CODE)
         }
-        return -1
     }
 
     // creates a filename based off of current time and day
@@ -121,6 +116,18 @@ class MainActivity : AppCompatActivity() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         return "IMG_$timeStamp.jpg"
     }
+
+    fun onClickSave(v: View?){
+        currImage = ImageFile(date, currImgFName, currImgPath, description.text.toString())
+        val saveIntent = Intent(this, FileManager::class.java)
+        saveIntent.putExtra("newImg", currImage)
+        Snackbar.make(findViewById(android.R.id.content),
+            "Saved picture taken on ${currImage.date}...${currImage.count} take(s)",
+            Snackbar.LENGTH_LONG)
+            .show()
+        startActivity(saveIntent)
+    }
+
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -131,31 +138,30 @@ class MainActivity : AppCompatActivity() {
                     // get the high-quality image created if intent extra used
                     val photo = BitmapFactory.decodeFile(filePath)
                     mainImg.setImageBitmap(photo)
-                    filetext.text = currImgDate
+                    filetext.text = currImgFName
                 }
                 RESULT_CANCELED -> Log.i(TAG, "cancelled")
                 else -> Log.i(TAG, "failed")
             }
         }
         else if(requestCode == previousCode){
-            val currImg : ImageFile = data?.getSerializableExtra("image") as ImageFile
-            val photo = BitmapFactory.decodeFile(currImg.path)
-            mainImg.setImageBitmap(photo)
-            filetext.text = currImg.fname
-            // TODO("Last error was that currImgDate was not init when we open an old picture upon starting the app")
-            currImgDate = currImg.fname.toString()
-            description.setText(currImg.descript)
-        }
-    }
-    // copy paste
-    private fun saveObjectToFile(fileName: String, obj: Any) {
-        try {
-            ObjectOutputStream(openFileOutput(fileName, MODE_PRIVATE)).use {
-                it.writeObject(obj)
+            when(resultCode){
+                RESULT_OK ->{
+                    currImage = data?.getSerializableExtra("image") as ImageFile
+                    if(date == currImage.date){
+                        cameraBtn.text = "RETAKE?"
+                    }
+                    date = currImage.date
+                    currImgPath = currImage.path
+                    currImgFName = currImage.fname
+                    val photo = BitmapFactory.decodeFile(currImage.path)
+                    mainImg.setImageBitmap(photo)
+                    filetext.text = date
+                    description.setText(currImage.descript)
+                }
+                RESULT_CANCELED -> Log.i(TAG, "cancelled")
+                else -> Log.i(TAG, "failed")
             }
-        }
-        catch (e: IOException){
-            Log.e("IT472", "IOException writing file $fileName")
         }
     }
 
@@ -184,17 +190,6 @@ class MainActivity : AppCompatActivity() {
             arrayListOf<ImageFile>()
         }
     }
-
-    override fun onPause() {
-        super.onPause()
-        saveObjectToFile(appFile, imageFiles)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        saveObjectToFile(appFile, imageFiles)
-    }
-
 }
 
-data class ImageFile(val fname : String?, val path: String?, val descript : String?) : Serializable
+data class ImageFile(val date : String, val fname : String, val path: String, val descript : String, var count : Int = 0) : Serializable

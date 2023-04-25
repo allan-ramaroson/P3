@@ -23,8 +23,13 @@ class FileManager : AppCompatActivity(), RecyclerClickListener {
         fileListView = findViewById(R.id.FileList)
 
         files = retrieveTasks()
+
+        val data = intent.getSerializableExtra("newImg")
+        if(data != null){
+            files.add(data as ImageFile)
+        }
         count = files.size
-        Log.i(tag, "current list size onCreate is $count")
+        Log.i(tag, "current list size onCreate in FileManager is $count")
         val toDoListAdapter = ToDoAdapter(files, this)
         fileListView.adapter = toDoListAdapter
     }
